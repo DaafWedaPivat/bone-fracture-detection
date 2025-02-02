@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.10.17"
+__generated_with = "0.10.19"
 app = marimo.App(width="full")
 
 
@@ -61,9 +61,9 @@ def _(ImageFile, warnings):
 
 @app.cell
 def _(Path):
-    path = Path('private/src/FracAtlas/images')
-    path_Fractured = Path('private/src/FracAtlas/images/Fractured')
-    path_Non_fractured = Path('private/src/FracAtlas/images/Non_fractured')
+    path = Path('private/dependencies/FracAtlas/images')
+    path_Fractured = Path('private/dependencies/FracAtlas/images/Fractured')
+    path_Non_fractured = Path('private/dependencies/FracAtlas/images/Non_fractured')
     return path, path_Fractured, path_Non_fractured
 
 
