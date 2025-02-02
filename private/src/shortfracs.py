@@ -61,9 +61,9 @@ def _(ImageFile, warnings):
 
 @app.cell
 def _(Path):
-    path = Path('C:/Users/darwin/Daten/Dokumente/Programmierung/marimo/marimo-env/FracAtlas/FracAtlas/images')
-    path_Fractured = Path('C:/Users/darwin/Daten/Dokumente/Programmierung/marimo/marimo-env/FracAtlas/FracAtlas/images/Fractured')
-    path_Non_fractured = Path('C:/Users/darwin/Daten/Dokumente/Programmierung/marimo/marimo-env/FracAtlas/FracAtlas/images/Non_fractured')
+    path = Path('private/src/FracAtlas/images')
+    path_Fractured = Path('private/src/FracAtlas/images/Fractured')
+    path_Non_fractured = Path('private/src/FracAtlas/images/Non_fractured')
     return path, path_Fractured, path_Non_fractured
 
 
