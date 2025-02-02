@@ -1,10 +1,10 @@
-# Dataset of fractured and non-ractured bones from https://figshare.com/articles/dataset/The_dataset/22363012?file=43283628
-private/src/FracAtlas
-
-# For running on marimo
-private/src/__pycache__
-private/src/Lib
-private/src/Scripts
-
 # additional needed environment settings for marimo
 private/src/pyvenv.cfg
+
+# environment
+private/dependencies/*
+private/generated/*
+
+__pycache__
+
+!.gitignore
