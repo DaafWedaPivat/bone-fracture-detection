@@ -2,7 +2,9 @@
 private/src/pyvenv.cfg
 
 # environment
-private/dependencies
-private/generated
+private/dependencies/*
+private/generated/*
 
 __pycache__
+
+!.gitignore
