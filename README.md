@@ -28,7 +28,10 @@ git clone https://github.com/DaafWedaPivat/bone-fracture-detection.git
 cd bone-fracture-detection
 ```
 
-### 4. Create a virtual environment
+### 4. Add dependencies
+Download the [FracAtlas Dataset](https://figshare.com/articles/dataset/The_dataset/22363012) and extract it in private/dependencies
+
+### 5. Create a virtual environment
 #### with pip
 make sure to not use python 3.13
 ```
@@ -41,7 +44,7 @@ python3.12 -m venv .venv
 uv venv --python 3.12
 ```
 
-### 5. Activate environment
+### 6. Activate environment
 
 | Platform | Shell       | Command to Activate Virtual Environment       |
 |----------|-------------|-----------------------------------------------|
@@ -52,7 +55,7 @@ uv venv --python 3.12
 | Windows  | cmd.exe     | `C:\> .venv\Scripts\activate.bat`            |
 |          | PowerShell  | `PS C:\> .venv\Scripts\Activate.ps1`         |
 
-### 6. Start marimo
+### 7. Start marimo
 ```
 // only the first time
 pip install marimo  // or with uv:
