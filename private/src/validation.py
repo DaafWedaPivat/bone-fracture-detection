@@ -22,7 +22,7 @@ def main():
               "yolov8s400",
               ]
 
-    test_data = "../generated/yolo_dataset/test/"
+    test_data = "../generated/yolo_dataset/valid/"
     images = [test_data + "images/" + i for i in os.listdir(test_data + "images")]
 
     images = check_images(images)
@@ -59,10 +59,10 @@ def evaluate_model(model, images, label_directory) -> (list, list):
 
     count = 0
     while count < len(images):
-        results += model.predict(images[count:count+batch_size], conf=0.01)
+        results += model.predict(images[count:count+batch_size], conf=0)
         count += batch_size
 
-    print(results[1])
+    # print(results[1])
     # print(results[1].boxes)
 
     # print(results[1].summary(normalize=True))
@@ -91,7 +91,7 @@ def evaluate_model(model, images, label_directory) -> (list, list):
                         ious[i] = new_iou
         result.append(ious)
 
-    print(results_formatted)
+    # print(results_formatted)
 
     true_labels = []
     confidence_values = []
@@ -118,14 +118,12 @@ def plot_roc_curve_detailed(fig, true_labels, confidence_values, name=None):
       - confidence_values: Liste der Konfidenzwerte.
       - name: Name des Modells (wird in der Legende angezeigt).
     """
-    from sklearn.metrics import roc_curve
-    import plotly.graph_objects as go
 
     # ROC-Berechnung
     fpr, tpr, thresholds = roc_curve(true_labels, confidence_values)
 
     # Trace für die ROC-Kurve hinzufügen: Linien + Marker, mit jedem Threshold als text
-    text_labels = [f"Threshold: {thr:.2f}" for thr in thresholds]
+    text_labels = [f"Threshold: {thr:.3f}" for thr in thresholds]
 
     fig.add_trace(go.Scatter(
         x=fpr,
@@ -149,10 +147,10 @@ def plot_roc_curve_detailed(fig, true_labels, confidence_values, name=None):
         ))
 
     fig.update_layout(
-        title="Interaktive ROC-Kurve",
+        title="ROC-curve",
         xaxis_title="False Positive Rate",
         yaxis_title="True Positive Rate",
-        legend_title="Modelle"
+        legend_title="models"
     )
 
 

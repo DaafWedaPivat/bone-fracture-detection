@@ -1,12 +1,12 @@
 -
-  model: "yolov8s.pt"
-  name: "yolov8s400"
-  epochs: 400
--
   model: "yolo12m.pt"
-  name: "yolo12m"
-  epochs: 400
+  name: "yolo12m400"
+  epochs: 600
 -
-  model: "yolov8l.pt"
-  name: "yolov8l400"
-  epochs: 400
+  model: "yolo12s.pt"
+  name: "yolo12s600"
+  epochs: 600
+-
+  model: "yolo11l.pt"
+  name: "yolo11l600"
+  epochs: 600
