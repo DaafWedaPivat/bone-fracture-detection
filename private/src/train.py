@@ -15,16 +15,19 @@ def _():
 def _():
     from ultralytics import YOLO
 
-    dataset = "../bone-fracture-detection/private/generated/yolo_dataset/dataset.yaml"
+    name = "yolo11n"
 
-    _ = YOLO("private/generated/yolo11n.pt")
-    model = YOLO("private/generated/yolov8s.pt")
+    dataset = "../generated/yolo_dataset/dataset.yaml"
+
+    # _ = YOLO("private/generated/yolo11n.pt")
+    model = YOLO("../generated/yolo11n.pt")
 
     train_results = model.train(
-        data=dataset,  # path to dataset YAML
-        epochs=30,  # number of training epochs
-        imgsz=640,  # training image size
-        project="private/generated/"
+        data=dataset,
+        project="../generated/",
+        epochs=100,
+        imgsz=640,
+        name=name,
     )
     return YOLO, dataset, model, train_results
 

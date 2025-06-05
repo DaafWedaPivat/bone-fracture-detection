@@ -18,7 +18,7 @@ def _():
 
 @app.cell
 def _():
-    root = ""
+    root = "../../"
     dependencies = root + "private/dependencies/"
     generated = root + "private/generated/"
     dataset = dependencies + "FracAtlas/"
@@ -54,7 +54,7 @@ def _(mo):
 
 @app.cell
 def _(os, shutil, yolo_dataset):
-    shutil.rmtree(yolo_dataset)
+    shutil.rmtree(yolo_dataset, ignore_errors=True)
 
     os.makedirs(yolo_dataset + "train/images", exist_ok=True)
     os.makedirs(yolo_dataset + "train/labels", exist_ok=True)
