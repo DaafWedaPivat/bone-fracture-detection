@@ -1,5 +1,7 @@
 import streamlit as st
 from PIL import Image, ImageDraw
+import plotly.express as px
+import numpy as np
 
 
 def main():
@@ -47,11 +49,15 @@ def main():
             for rect in result.boxes.xyxy.tolist():
                 imdraw.rectangle(rect, outline=(255, 0, 0, 100), width=3)
 
-            st.image(image, use_column_width=True)
+            # st.image(image, use_column_width=True)
+            fig = px.imshow(image)
+            st.plotly_chart(fig, use_container_width=True)
 
         else:
             "kein Bruch gefunden"
-            st.image(image, use_column_width=True)
+            # st.image(image, use_column_width=True)
+            fig = px.imshow(image)
+            st.plotly_chart(fig, use_container_width=True)
 
 
 def read_bounding_boxes(string):

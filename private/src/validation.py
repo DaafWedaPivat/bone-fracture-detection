@@ -2,6 +2,7 @@ import os
 from PIL import Image
 
 from sklearn.metrics import roc_curve, RocCurveDisplay
+import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 import numpy as np
 from ultralytics import YOLO
@@ -21,23 +22,27 @@ def main():
               "yolov8s400",
               ]
 
-    test_data = "../generated/yolo_dataset/valid/"
+    test_data = "../generated/yolo_dataset/test/"
     images = [test_data + "images/" + i for i in os.listdir(test_data + "images")]
 
     images = check_images(images)
     print("check images ready")
 
-    ax = plt.axes()
-    x = np.linspace(0, 1, 100)
-    ax.plot(x, x, linestyle=":")
+    # ax = plt.axes()
+    # x = np.linspace(0, 1, 100)
+    # ax.plot(x, x, linestyle=":")
+    fig = go.Figure()
 
     for model in models:
         model_path = f"../generated/{model}/weights/best.pt"
         print(model_path)
         true_labels, confidence_values = evaluate_model(model_path, images, test_data + "labels/")
-        plot_roc_curve(ax, true_labels, confidence_values, name=model)
+        # plot_roc_curve(ax, true_labels, confidence_values, name=model)
+        plot_roc_curve_detailed(fig, true_labels, confidence_values, name=model)
+        # break
+        fig.update()
 
-    plt.show()
+    fig.show()
 
 
 def evaluate_model(model, images, label_directory) -> (list, list):
@@ -101,6 +106,54 @@ def evaluate_model(model, images, label_directory) -> (list, list):
 def plot_roc_curve(ax, true_labels, confidence_values, name=None):
     display = RocCurveDisplay.from_predictions(true_labels, confidence_values, ax=ax, name=name)
     # display.plot(ax=ax, name=name)
+
+
+def plot_roc_curve_detailed(fig, true_labels, confidence_values, name=None):
+    """
+    Fügt einem Plotly-Figure-Objekt eine ROC-Kurve hinzu, bei der an jedem Punkt der Schwellenwert angezeigt wird.
+
+    Parameter:
+      - fig: Ein existierendes Plotly-Figure-Objekt, dem die ROC-Kurve hinzugefügt wird.
+      - true_labels: Liste der wahren Label.
+      - confidence_values: Liste der Konfidenzwerte.
+      - name: Name des Modells (wird in der Legende angezeigt).
+    """
+    from sklearn.metrics import roc_curve
+    import plotly.graph_objects as go
+
+    # ROC-Berechnung
+    fpr, tpr, thresholds = roc_curve(true_labels, confidence_values)
+
+    # Trace für die ROC-Kurve hinzufügen: Linien + Marker, mit jedem Threshold als text
+    text_labels = [f"Threshold: {thr:.2f}" for thr in thresholds]
+
+    fig.add_trace(go.Scatter(
+        x=fpr,
+        y=tpr,
+        mode='lines+markers',
+        name=f"ROC {name}",
+        text=text_labels,
+        hovertemplate="FPR: %{x:.2f}<br>TPR: %{y:.2f}<br>%{text}<extra></extra>",
+        visible=True  # Die Sichtbarkeit kann über die Legende geändert werden
+    ))
+
+    # Diagonale Referenzlinie (Random Classifier) nur einmal hinzufügen, falls noch nicht vorhanden
+    if not any(trace.name == "Random" for trace in fig.data):
+        fig.add_trace(go.Scatter(
+            x=[0, 1],
+            y=[0, 1],
+            mode='lines',
+            line=dict(dash='dash', color='gray'),
+            name='Random',
+            hoverinfo='skip'
+        ))
+
+    fig.update_layout(
+        title="Interaktive ROC-Kurve",
+        xaxis_title="False Positive Rate",
+        yaxis_title="True Positive Rate",
+        legend_title="Modelle"
+    )
 
 
 def check_images(images):
