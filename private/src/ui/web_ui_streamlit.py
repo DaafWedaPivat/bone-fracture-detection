@@ -1,13 +1,14 @@
 import streamlit as st
-from PIL import Image
+from PIL import Image, ImageDraw
 import plotly.express as px
 import numpy as np
 from ultralytics import YOLO
+import io
 
 model_name = "yolov8l400"
 model_path = f"../../generated/{model_name}/weights/best.pt"
 
-@st.experimental_singleton
+# @st.experimental_singleton
 def load_model(model_path):
     return YOLO(model_path)
 
@@ -29,9 +30,12 @@ def main():
     px_image_figures = []
     st_image_elements = []
     # st_text_elements = []
+    st_download_elements = []
+
     for _ in range(len(images)):
         # st_text_elements.append(st.empty())
         st_image_elements.append(st.empty())
+        st_download_elements.append(st.empty())
 
     for i in range(len(images)):
         images[i] = open_image(images[i])
@@ -44,12 +48,17 @@ def main():
         result = predict(images[i])
 
         new_result = []
-        for i, r in enumerate(result):
+        for j, r in enumerate(result):
             if r["confidence"] >= threshold:
                 new_result.append(r)
         result = new_result
 
         image_results.append(result)
+
+    annotation_boxes = None
+    if annotation_file is not None:
+        annotation = annotation_file.read().decode("utf-8")
+        annotation_boxes = read_bounding_boxes(annotation)
 
     for i in range(len(images)):
         fig = px_image_figures[i]
@@ -63,7 +72,41 @@ def main():
 
         st_image_elements[i].plotly_chart(fig)
 
-@st.experimental_memo
+        with st_download_elements[i].container():
+            if len(image_results[i]) > 0 or annotation_boxes:
+                st.write(f"**Image {i+1} Results:**")
+                if len(image_results[i]) > 0:
+                    st.success(f"✅ {len(image_results[i])} fracture(s) detected")
+                else:
+                    st.info("No fractures detected above threshold")
+
+                annotated_image = create_downloadable_image(
+                    images[i],
+                    image_results[i],
+                    annotation_boxes
+                )
+
+                img_buffer = io.BytesIO()
+                annotated_image.save(img_buffer, format='PNG')
+                img_bytes = img_buffer.getvalue()
+
+                original_filename = getattr(images[i], 'filename', f'image_{i+1}')
+                if hasattr(original_filename, 'name'):
+                    original_filename = original_filename.name
+
+                st.download_button(
+                    label=f"📥 Download Annotated Image {i+1}",
+                    data=img_bytes,
+                    file_name=f"annotated_{original_filename}.png",
+                    mime="image/png",
+                    key=f"download_btn_{i}"
+                )
+            else:
+                st.info("ℹ️ No detections or annotations to download")
+
+            st.divider()
+
+# @st.experimental_memo
 def open_image(image):
     image = Image.open(image)
     image = image.convert("RGBA")
@@ -110,6 +153,23 @@ def read_bounding_boxes(string):
             bounding_boxes.append([x1, y1, x2, y2])
 
     return bounding_boxes
+
+def create_downloadable_image(image, results, annotation_boxes=None):
+    annotated_image = image.copy().convert("RGB")
+    draw = ImageDraw.Draw(annotated_image)
+
+    if annotation_boxes:
+        img_size_x, img_size_y = image.size
+        for box in annotation_boxes:
+            x0, y0, x1, y1 = box[0]*img_size_x, box[1]*img_size_y, box[2]*img_size_x, box[3]*img_size_y
+            draw.rectangle([x0, y0, x1, y1], outline=(0, 0, 255), width=3)
+
+    for rect in results:
+        x0, y0, x1, y1 = rect["box"]["x1"], rect["box"]["y1"], rect["box"]["x2"], rect["box"]["y2"]
+        draw.rectangle([x0, y0, x1, y1], outline=(255, 0, 0), width=3)
+        draw.text((x0, y0-15), f"{rect['confidence']:.3f}", fill=(255, 0, 0))
+
+    return annotated_image
 
 
 if __name__ == "__main__":
