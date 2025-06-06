@@ -1,5 +1,5 @@
 import streamlit as st
-from PIL import Image
+from PIL import Image, ImageDraw
 import plotly.express as px
 import numpy as np
 from ultralytics import YOLO
@@ -8,7 +8,7 @@ import io
 model_name = "yolov8l400"
 model_path = f"../../generated/{model_name}/weights/best.pt"
 
-@st.experimental_singleton
+# @st.experimental_singleton
 def load_model(model_path):
     return YOLO(model_path)
 
@@ -64,7 +64,21 @@ def main():
 
         st_image_elements[i].plotly_chart(fig)
 
-@st.experimental_memo
+
+        if len(image_results[i]) > 0:
+            annotated_image = create_downloadable_image(images[i], result)
+            img_buffer = io.BytesIO()
+            annotated_image.save(img_buffer, format='PNG')
+            img_bytes = img_buffer.getvalue()
+
+            st.download_button(
+                label="Download Annotated Image",
+                data=img_bytes,
+                file_name=f"annotated_{images[i].filename if hasattr(images[i], 'filename') else 'image'}.png",
+                mime="image/png"
+            )
+
+# @st.experimental_memo
 def open_image(image):
     image = Image.open(image)
     image = image.convert("RGBA")
@@ -91,18 +105,6 @@ def add_model_prediction_boxes(fig, result):
         fig.add_shape(x0=rect["box"]["x1"], y0=rect["box"]["y1"], x1=rect["box"]["x2"], y1=rect["box"]["y2"],
                       line={"color": "rgba(255, 0, 0, 0.4)"})
 
-        if len(result) > 0:
-            annotated_image = create_downloadable_image(image, result)
-            img_buffer = io.BytesIO()
-            annotated_image.save(img_buffer, format='PNG')
-            img_bytes = img_buffer.getvalue()
-
-            st.download_button(
-                label="Download Annotated Image",
-                data=img_bytes,
-                file_name=f"annotated_{image.filename if hasattr(image, 'filename') else 'image'}.png",
-                mime="image/png"
-            )
 
 def read_bounding_boxes(string):
     bounding_boxes = []
