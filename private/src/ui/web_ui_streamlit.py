@@ -3,6 +3,7 @@ from PIL import Image, ImageDraw
 import plotly.express as px
 import numpy as np
 from ultralytics import YOLO
+import io
 
 model_name = "yolo11m400"
 model_path = f"../../generated/{model_name}/weights/best.pt"
@@ -43,7 +44,7 @@ def main():
                 fig.add_shape(x0=x0, y0=y0, x1=x1, y1=y1, line={"color":"rgba(0, 0, 255, 0.4)"})
 
         if len(result) > 0:
-            "Bruch gefunden"
+            "Fracture detected"
 
             for rect in result:
                 # imdraw.rectangle(rect, outline=(255, 0, 0, 100), width=3)
@@ -52,10 +53,22 @@ def main():
             # st.image(image, use_column_width=True)
 
         else:
-            "kein Bruch gefunden"
+            "No fractures detected above the threshold"
             # st.image(image, use_column_width=True)
         st.plotly_chart(fig, use_container_width=True)
 
+        if len(result) > 0:
+            annotated_image = create_downloadable_image(image, result)
+            img_buffer = io.BytesIO()
+            annotated_image.save(img_buffer, format='PNG')
+            img_bytes = img_buffer.getvalue()
+
+            st.download_button(
+                label="Download Annotated Image",
+                data=img_bytes,
+                file_name=f"annotated_{image.filename if hasattr(image, 'filename') else 'image'}.png",
+                mime="image/png"
+            )
 
 def read_bounding_boxes(string):
     bounding_boxes = []
@@ -77,6 +90,16 @@ def read_bounding_boxes(string):
 
     return bounding_boxes
 
+def create_downloadable_image(image, results):
+    annotated_image = image.copy().convert("RGB")
+    draw = ImageDraw.Draw(annotated_image)
+
+    for rect in results:
+        x0, y0, x1, y1 = rect["box"]["x1"], rect["box"]["y1"], rect["box"]["x2"], rect["box"]["y2"]
+        draw.rectangle([x0, y0, x1, y1], outline=(255, 0, 0), width=3)
+        draw.text((x0, y0-15), f"{rect['confidence']:.3f}", fill=(255, 0, 0))
+
+    return annotated_image
 
 if __name__ == "__main__":
     main()
