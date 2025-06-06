@@ -15,7 +15,9 @@ batch_size = 64
 def main():
     models = ["yolo11m400",
               "yolo11n100",
+              "yolo11l600",
               "yolo12n100",
+              "yolo12s600",
               "yolov8l400",
               "yolov8m200",
               "yolov8n100",
@@ -59,7 +61,7 @@ def evaluate_model(model, images, label_directory) -> (list, list):
 
     count = 0
     while count < len(images):
-        results += model.predict(images[count:count+batch_size], conf=0)
+        results += model.predict(images[count:count+batch_size], conf=0.01)
         count += batch_size
 
     # print(results[1])
