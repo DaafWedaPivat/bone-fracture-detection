@@ -22,6 +22,7 @@ def main():
 
         image = image.convert("RGBA")
 
+    with st.spinner("Detecting fractures..."):
         result = model.predict(image, conf=0.001)[0].summary()
 
         new_result = []
