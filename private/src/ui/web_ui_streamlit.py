@@ -1,5 +1,5 @@
 import streamlit as st
-from PIL import Image, ImageDraw
+from PIL import Image, ImageFile
 import plotly.express as px
 import numpy as np
 from ultralytics import YOLO
@@ -17,12 +17,13 @@ def main():
 
     threshold = st.slider(label="Confidence threshold", min_value=0.001, max_value=0.5, value=0.05, step=0.001, format="%0.3f")
 
-    for image in images:
-        image = Image.open(image)
+    image_results = []
 
-        image = image.convert("RGBA")
+    for i in range(len(images)):
+        images[i] = Image.open(images[i])
+        images[i] = images[i].convert("RGBA")
 
-        result = model.predict(image, conf=0.001)[0].summary()
+        result = model.predict(images[i], conf=0.001)[0].summary()
 
         new_result = []
         for i, r in enumerate(result):
@@ -30,30 +31,37 @@ def main():
                 new_result.append(r)
         result = new_result
 
-        fig = px.imshow(image)
+        image_results.append(result)
+
+    for i in range(len(images)):
+        fig = px.imshow(images[i])
 
         if annotation_file is not None:
-            img_size_x, img_size_y = image.size
-            annotation = annotation_file.read().decode("utf-8")
-            boxes = read_bounding_boxes(annotation)
+            img_size_x, img_size_y = images[i].size
+            add_annotation_file_boxes(fig, annotation_file, img_size_x, img_size_y)
 
-            for b in boxes:
-                x0, y0, x1, y1 = b[0]*img_size_x, b[1]*img_size_y, b[2]*img_size_x, b[3]*img_size_y
-                fig.add_shape(x0=x0, y0=y0, x1=x1, y1=y1, line={"color":"rgba(0, 0, 255, 0.4)"})
-
-        if len(result) > 0:
+        if len(image_results[i]) > 0:
             "Bruch gefunden"
-
-            for rect in result:
-                # imdraw.rectangle(rect, outline=(255, 0, 0, 100), width=3)
-                fig.add_shape(x0=rect["box"]["x1"], y0=rect["box"]["y1"], x1=rect["box"]["x2"], y1=rect["box"]["y2"], line={"color":"rgba(255, 0, 0, 0.4)"})
-
-            # st.image(image, use_column_width=True)
-
+            add_model_prediction_boxes(fig, image_results[i])
         else:
             "kein Bruch gefunden"
-            # st.image(image, use_column_width=True)
+
         st.plotly_chart(fig, use_container_width=True)
+
+
+def add_annotation_file_boxes(fig, annotation_file, img_size_x, img_size_y):
+    annotation = annotation_file.read().decode("utf-8")
+    boxes = read_bounding_boxes(annotation)
+
+    for b in boxes:
+        x0, y0, x1, y1 = b[0] * img_size_x, b[1] * img_size_y, b[2] * img_size_x, b[3] * img_size_y
+        fig.add_shape(x0=x0, y0=y0, x1=x1, y1=y1, line={"color": "rgba(0, 0, 255, 0.4)"})
+
+
+def add_model_prediction_boxes(fig, result):
+    for rect in result:
+        fig.add_shape(x0=rect["box"]["x1"], y0=rect["box"]["y1"], x1=rect["box"]["x2"], y1=rect["box"]["y2"],
+                      line={"color": "rgba(255, 0, 0, 0.4)"})
 
 
 def read_bounding_boxes(string):
