@@ -3,6 +3,7 @@ from PIL import Image
 import plotly.express as px
 import numpy as np
 from ultralytics import YOLO
+import io
 
 model_name = "yolov8l400"
 model_path = f"../../generated/{model_name}/weights/best.pt"
@@ -24,32 +25,32 @@ def main():
 
     image_results = []
 
+    with st.spinner("Detecting fractures..."):
+        # create image placeholders
+        px_image_figures = []
+        st_image_elements = []
+        # st_text_elements = []
+        for _ in range(len(images)):
+            # st_text_elements.append(st.empty())
+            st_image_elements.append(st.empty())
 
-    # create image placeholders
-    px_image_figures = []
-    st_image_elements = []
-    # st_text_elements = []
-    for _ in range(len(images)):
-        # st_text_elements.append(st.empty())
-        st_image_elements.append(st.empty())
+        for i in range(len(images)):
+            images[i] = open_image(images[i])
 
-    for i in range(len(images)):
-        images[i] = open_image(images[i])
+            fig = imshow(images[i])
+            px_image_figures.append(fig)
+            st_image_elements[i].plotly_chart(fig)
 
-        fig = imshow(images[i])
-        px_image_figures.append(fig)
-        st_image_elements[i].plotly_chart(fig)
+        for i in range(len(images)):
+            result = predict(images[i])
 
-    for i in range(len(images)):
-        result = predict(images[i])
+            new_result = []
+            for i, r in enumerate(result):
+                if r["confidence"] >= threshold:
+                    new_result.append(r)
+            result = new_result
 
-        new_result = []
-        for i, r in enumerate(result):
-            if r["confidence"] >= threshold:
-                new_result.append(r)
-        result = new_result
-
-        image_results.append(result)
+            image_results.append(result)
 
     for i in range(len(images)):
         fig = px_image_figures[i]
@@ -90,6 +91,18 @@ def add_model_prediction_boxes(fig, result):
         fig.add_shape(x0=rect["box"]["x1"], y0=rect["box"]["y1"], x1=rect["box"]["x2"], y1=rect["box"]["y2"],
                       line={"color": "rgba(255, 0, 0, 0.4)"})
 
+        if len(result) > 0:
+            annotated_image = create_downloadable_image(image, result)
+            img_buffer = io.BytesIO()
+            annotated_image.save(img_buffer, format='PNG')
+            img_bytes = img_buffer.getvalue()
+
+            st.download_button(
+                label="Download Annotated Image",
+                data=img_bytes,
+                file_name=f"annotated_{image.filename if hasattr(image, 'filename') else 'image'}.png",
+                mime="image/png"
+            )
 
 def read_bounding_boxes(string):
     bounding_boxes = []
@@ -111,6 +124,16 @@ def read_bounding_boxes(string):
 
     return bounding_boxes
 
+def create_downloadable_image(image, results):
+    annotated_image = image.copy().convert("RGB")
+    draw = ImageDraw.Draw(annotated_image)
+
+    for rect in results:
+        x0, y0, x1, y1 = rect["box"]["x1"], rect["box"]["y1"], rect["box"]["x2"], rect["box"]["y2"]
+        draw.rectangle([x0, y0, x1, y1], outline=(255, 0, 0), width=3)
+        draw.text((x0, y0-15), f"{rect['confidence']:.3f}", fill=(255, 0, 0))
+
+    return annotated_image
 
 if __name__ == "__main__":
     main()
