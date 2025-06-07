@@ -39,7 +39,7 @@ def main():
 
             fig = imshow(images[i])
             px_image_figures.append(fig)
-            st_image_elements[i].plotly_chart(fig)
+            st_image_elements[i].plotly_chart(fig, key=f"plotly_chart_initial_{i}")
 
         for i in range(len(images)):
             result = predict(images[i])
@@ -62,7 +62,7 @@ def main():
         if len(image_results[i]) > 0:
             add_model_prediction_boxes(fig, image_results[i])
 
-        st_image_elements[i].plotly_chart(fig)
+        st_image_elements[i].plotly_chart(fig, key=f"plotly_chart_annotated_{i}")
 
 
         if len(image_results[i]) > 0:
