@@ -1,3 +1,6 @@
+# ultralytics files because it's awkward to work with
+yolo11n.pt
+
 # additional needed environment settings for marimo
 private/src/pyvenv.cfg
 
