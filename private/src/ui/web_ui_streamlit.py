@@ -4,6 +4,8 @@ import plotly.express as px
 import numpy as np
 from ultralytics import YOLO
 import io
+import pydicom
+from pydicom.pixel_data_handlers.util import apply_voi_lut
 
 model_name = "yolov8l400"
 model_path = f"../../generated/{model_name}/weights/best.pt"
@@ -17,7 +19,7 @@ model = load_model(model_path)
 def main():
     st.title("bone fracture detection")
 
-    images = st.file_uploader(label="Upload image", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
+    images = st.file_uploader(label="Upload image", type=["png", "jpg", "jpeg", "dcm"], accept_multiple_files=True)
 
     annotation_file = st.file_uploader(label="Upload annotation (optional)", type=["txt"])
 
@@ -79,10 +81,15 @@ def main():
             )
 
 # @st.experimental_memo
+
 def open_image(image):
-    image = Image.open(image)
-    image = image.convert("RGBA")
-    return image
+    if image.name.lower().endswith(".dcm"):
+        image = dicom_to_pil(image)
+        return image
+    else:
+        image = Image.open(image)
+        image = image.convert("RGBA")
+        return image
 
 # @st.experimental_memo
 def imshow(_image):
@@ -136,6 +143,22 @@ def create_downloadable_image(image, results):
         draw.text((x0, y0-15), f"{rect['confidence']:.3f}", fill=(255, 0, 0))
 
     return annotated_image
+
+def dicom_to_pil(dicom_file):
+    dicom = pydicom.dcmread(dicom_file, force=True)
+
+    image = apply_voi_lut(dicom.pixel_array, dicom)
+
+    if image.dtype != np.uint8:
+        image = (image - np.min(image)) / (np.max(image) - np.min(image)) * 255
+        image = image.astype(np.uint8)
+
+    if len(image.shape) == 2:
+        pil_image = Image.fromarray(image).convert("RGB")
+    else:
+        pil_image = Image.fromarray(image[:, :, :3])
+
+    return pil_image
 
 if __name__ == "__main__":
     main()
