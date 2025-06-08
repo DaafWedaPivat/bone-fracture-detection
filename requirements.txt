@@ -1,0 +1,12 @@
+streamlit==1.45.1
+ultralytics==8.3.144
+pillow==11.0.0
+plotly==6.1.2
+numpy==2.1.2
+pydicom==3.0.1
+opencv-python==4.11.0.86
+matplotlib==3.10.3
+scikit-learn==1.6.1
+torch==2.5.1+cu121
+torchvision==0.20.1+cu121
+torchaudio==2.5.1+cu121
