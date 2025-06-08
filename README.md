@@ -63,13 +63,19 @@ uv venv --python 3.12
 | Windows       | cmd.exe     | `C:\> private\dependencies\venv\Scripts\activate.bat`               |
 |               | PowerShell  | `PS C:\> private\dependencies\venv\Scripts\Activate.ps1`            |
 
-### 7. Start marimo
-```
-// only the first time
-pip install marimo  // or with uv:
-uv pip install marimo
+### 7. Install neccessary python packages
+Install all required python packages by installing the requirements.txt:
 
-// to start marimo
-marimo edit
-```
-If you run it for the first time, marimo will ask in a popup if it should install all needed packages. Choose either pip or uv and click install.
+with pip:
+'pip install -r requirements.txt'
+
+with uv:
+'uv pip install -r requirements.txt'
+
+### 8. Download trained models
+'mkdir private/generated/yolov8l400/weights && curl -L "https://www.dropbox.com/scl/fi/vf7g0q02f4wuzf7puqrje/best.pt?rlkey=lnm2apm2lusnf5bvtwnn5ns3c&st=7tu4upve&dl=1" -o private/generated/yolov8l400/weights/best.pt'
+
+### 9. Run the dataset and after that the ui script
+'python3.12 private/make/yolo_dataset.py && cd private/src/ui/'
+After this:
+'streamlit run ./'web_ui_streamlit.py
