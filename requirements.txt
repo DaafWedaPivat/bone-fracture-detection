@@ -7,6 +7,6 @@ pydicom==3.0.1
 opencv-python==4.11.0.86
 matplotlib==3.10.3
 scikit-learn==1.6.1
-torch==2.5.1+cu121
-torchvision==0.20.1+cu121
-torchaudio==2.5.1+cu121
+pylibjpeg
+pylibjpeg-libjpeg
+pydicom
