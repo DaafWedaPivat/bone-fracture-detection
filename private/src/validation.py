@@ -157,14 +157,17 @@ def plot_roc_curve_detailed(fig, true_labels, confidence_values, name=None):
 
 
 def check_images(images):
+    valid_images = []
     for i in images:
         try:
-            Image.open(i).load()
-        except OSError as e:
-            # print(e)
-            #  print(i)
-            images.remove(i)
-    return images
+            with Image.open(i) as img:
+                img.verify()  # Validate image integrity
+            with Image.open(i) as img:
+                img.load()  # Fully load the image
+            valid_images.append(i)
+        except Exception as e:
+            print(f"Removed corrupted image: {i} ({e})")
+    return valid_images
 
 
 def calculate_iou(box1, box2):
