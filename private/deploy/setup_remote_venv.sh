@@ -6,11 +6,7 @@
 # 1. The Nextcloud Public Link for your dataset zip (e.g., .../download)
 NEXTCLOUD_DATASET_URL="https://your-nextcloud.com/index.php/s/DATASET_TOKEN/download"
 
-# 2. Nextcloud File Drop WebDAV URL for results upload
-# Example: https://your-nextcloud.com/public.php/dav/UPLOAD_TOKEN
-NEXTCLOUD_UPLOAD_URL="https://your-nextcloud.com/public.php/dav/UPLOAD_TOKEN"
-
-# 3. Training parameters
+# 2. Training parameters
 TRAIN_NAME="yolo11n100_enhanced_remote_venv"
 EPOCHS=100
 IMGSZ=640
@@ -60,18 +56,5 @@ export EPOCHS="$EPOCHS"
 export IMGSZ="$IMGSZ"
 python3 private/src/train_remote.py
 
-# 5. Archive and Upload Results
-if [[ $NEXTCLOUD_UPLOAD_URL != *"your-nextcloud.com"* ]]; then
-  echo "Archiving results..."
-  # Create a zip of the entire training run folder
-  cd private/generated/
-  tar -czf "${TRAIN_NAME}_results.tar.gz" "$TRAIN_NAME"
-  
-  echo "Uploading archived results to Nextcloud File Drop..."
-  curl -T "${TRAIN_NAME}_results.tar.gz" "$NEXTCLOUD_UPLOAD_URL/${TRAIN_NAME}_results.tar.gz"
-  echo "Upload complete!"
-else
-  echo "NEXTCLOUD_UPLOAD_URL not configured. Results saved locally in private/generated/$TRAIN_NAME"
-fi
-
 echo "Remote VENV training finished successfully."
+echo "Results are saved in: private/generated/$TRAIN_NAME"

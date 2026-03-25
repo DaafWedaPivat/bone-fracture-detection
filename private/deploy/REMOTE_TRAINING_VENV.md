@@ -6,7 +6,6 @@ This guide is for running training on a remote server that doesn't have Docker. 
 - **Python 3.x**: Ensure `python3` and `python3-venv` are installed on the server.
 - **Nextcloud**:
   - **Dataset**: A zip file with public download link.
-  - **Results**: A folder with a public File Drop (WebDAV) upload link.
 
 ## Instructions
 
@@ -18,19 +17,19 @@ This guide is for running training on a remote server that doesn't have Docker. 
     ```
 
 2.  **Configure the Script**:
-    Open `private/deploy/setup_remote_venv.sh` and fill in your Nextcloud links at the top of the file:
+    Open `private/deploy/setup_remote_venv.sh` and fill in your Nextcloud dataset link at the top of the file:
     ```bash
     # Open with nano or vim
     nano private/deploy/setup_remote_venv.sh
     ```
 
 3.  **Run the Script**:
-    The script will handle everything else (venv creation, dependencies, download, training, upload).
+    The script will handle everything else (venv creation, dependencies, download, training).
     ```bash
     ./private/deploy/setup_remote_venv.sh
     ```
 
 ## Features
-- **Auto-upload**: Your training results (logs, charts, model) will be zipped and sent to Nextcloud automatically.
 - **Easy Config**: All configuration variables are clearly at the top of the script.
 - **Isolation**: Uses a dedicated `.venv_remote` folder to keep the server's Python clean.
+- **Local Results**: Training results are stored in `private/generated/[TRAIN_NAME]`.
