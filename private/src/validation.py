@@ -9,25 +9,24 @@ from ultralytics import YOLO
 print("Import ready")
 
 iou_threshold = 0.5
-batch_size = 64
+batch_size = 32
 
 
 def main():
-    models = ["yolo11m400",
+    models = [
               "yolo11n100",
-              "yolo11l600",
-              "yolo12n100",
-              "yolo12s600",
-              "yolov8l400",
-              "yolov8m200",
-              "yolov8n100",
-              "yolov8s400",
+              "yolo11n100_enhanced",
               ]
 
     test_data = "../generated/yolo_dataset/valid/"
     images = [test_data + "images/" + i for i in os.listdir(test_data + "images")]
 
     images = check_images(images)
+
+    test_data_enhanced = "../generated/yolo_dataset_enhanced/valid/"
+    images_enhanced = [test_data_enhanced + "images/" + i for i in os.listdir(test_data_enhanced + "images")]
+
+    images_enhanced = check_images(images_enhanced)
     print("check images ready")
 
     # ax = plt.axes()
@@ -38,23 +37,30 @@ def main():
     for model in models:
         model_path = f"../generated/{model}/weights/best.pt"
         print(model_path)
-        true_labels, confidence_values = evaluate_model(model_path, images, test_data + "labels/")
+        if "enhanced" in model:
+            print("enhanced model")
+            true_labels, confidence_values = evaluate_model(model_path, images_enhanced, test_data_enhanced + "labels/")
+        else:
+            true_labels, confidence_values = evaluate_model(model_path, images, test_data + "labels/")
         # plot_roc_curve(ax, true_labels, confidence_values, name=model)
         plot_roc_curve_detailed(fig, true_labels, confidence_values, name=model)
         # break
         fig.update()
 
+    output_path = "../generated/roc_curve.html"
+    fig.write_html(output_path)
+    print(f"ROC curve saved to {output_path}")
     fig.show()
 
 
-def evaluate_model(model, images, label_directory) -> (list, list):
+def evaluate_model(model_path, images, label_directory) -> (list, list):
     """
     evaluates a model to generate ROC curve
-    :param model: path to model.pt
+    :param model_path: path to model.pt
     :param images: list of paths to images
     :return: (true_labels, confidence_values)
     """
-    model = YOLO(model)
+    model = YOLO(model_path)
     print("load model ready")
 
     results = []
@@ -72,6 +78,7 @@ def evaluate_model(model, images, label_directory) -> (list, list):
     results_formatted = []
 
     for result in results:
+        # print(f"DEBUG: result.path = {result.path}")
         file = result.path.split("/")[-1]
         confidences = result.boxes.conf.tolist()
         boxes = result.boxes.xyxyn.tolist()
@@ -81,9 +88,11 @@ def evaluate_model(model, images, label_directory) -> (list, list):
     # print(results_formatted[1])
 
     # calculate ious
-    for result in results_formatted:
+    for i, result in enumerate(results_formatted):
         ious = [0] * len(result[1])
-        label_file = result[0].replace(".jpg", ".txt")
+        # Use the original image path to get the correct filename
+        image_filename = os.path.basename(images[i])
+        label_file = image_filename.replace(".jpg", ".txt")
         labels = read_bounding_boxes(label_directory + label_file)
         if len(labels) > 0:
             for label in labels:
@@ -157,14 +166,16 @@ def plot_roc_curve_detailed(fig, true_labels, confidence_values, name=None):
 
 
 def check_images(images):
+    images_new = []
     for i in images:
         try:
             Image.open(i).load()
-        except OSError as e:
+            images_new.append(i)
+        except Exception as e:
             # print(e)
             #  print(i)
-            images.remove(i)
-    return images
+            pass
+    return images_new
 
 
 def calculate_iou(box1, box2):
