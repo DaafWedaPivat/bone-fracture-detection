@@ -3,10 +3,7 @@
 # ==========================================
 # CONFIGURATION - EDIT THESE VALUES
 # ==========================================
-# 1. The Nextcloud Public Link for your dataset zip (e.g., .../download)
-NEXTCLOUD_DATASET_URL="https://your-nextcloud.com/index.php/s/DATASET_TOKEN/download"
-
-# 2. Training parameters
+# Training parameters
 TRAIN_NAME="yolo11n100_enhanced_remote_venv"
 EPOCHS=100
 IMGSZ=640
@@ -31,17 +28,13 @@ pip install --upgrade pip
 pip install -r requirements.txt
 
 # 2. Download and Extract Dataset
-if [[ $NEXTCLOUD_DATASET_URL != *"your-nextcloud.com"* ]]; then
-    echo "Downloading dataset from Nextcloud..."
-    curl -L "$NEXTCLOUD_DATASET_URL" -o dataset.zip
-    echo "Extracting dataset..."
-    unzip -q -o dataset.zip -d private/dependencies/
-    rm dataset.zip
-    echo "Dataset extracted to private/dependencies/"
-else
-    echo "NEXTCLOUD_DATASET_URL not configured. Skipping download."
-    echo "Ensure dataset is manually placed in private/dependencies/FracAtlas"
-fi
+echo "Downloading dataset..."
+curl -u "R4rSHQDSSGeCX4t":"" -H "X-Requested-With: XMLHttpRequest" "https://cloud.vochts.de/public.php/webdav/" -o dataset.zip
+
+echo "Extracting dataset..."
+unzip -q -o dataset.zip -d private/dependencies/
+rm dataset.zip
+echo "Dataset extracted to private/dependencies/"
 
 # 3. Prepare Dataset
 echo "Running dataset preparation..."
@@ -54,6 +47,11 @@ echo "Starting training: $TRAIN_NAME"
 export TRAIN_NAME="$TRAIN_NAME"
 export EPOCHS="$EPOCHS"
 export IMGSZ="$IMGSZ"
+# Ensure paths are correct for local execution
+export DATASET_PATH="private/generated/yolo_dataset_enhanced/dataset.yaml"
+export BASE_MODEL="yolo11n.pt"  # Let ultralytics download it to project root if missing
+export PROJECT_DIR="private/generated/"
+
 python3 private/src/train_remote.py
 
 echo "Remote VENV training finished successfully."
