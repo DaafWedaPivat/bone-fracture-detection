@@ -3,10 +3,10 @@ import os
 
 def main():
     # Use environment variables for flexibility
-    name = os.getenv("TRAIN_NAME", "yolov8l400_enhanced")
+    name = os.getenv("TRAIN_NAME", "yolo11l600_enhanced")
     dataset_path = os.getenv("DATASET_PATH", "private/generated/yolo_dataset_enhanced/dataset.yaml")
-    base_model = os.getenv("BASE_MODEL", "yolov8l.pt")
-    epochs = int(os.getenv("EPOCHS", "400"))
+    base_model = os.getenv("BASE_MODEL", "yolo11l.pt")
+    epochs = int(os.getenv("EPOCHS", "600"))
     imgsz = int(os.getenv("IMGSZ", "640"))
 
     print(f"Starting training: {name}")

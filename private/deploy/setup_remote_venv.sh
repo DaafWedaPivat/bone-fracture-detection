@@ -24,12 +24,16 @@ pip install -r requirements.txt
 
 # 2. Download and Extract Dataset
 if [[ $NEXTCLOUD_DATASET_URL != *"your-nextcloud.com"* ]]; then
-    echo "Downloading dataset from Nextcloud..."
-    curl -u "R4rSHQDSSGeCX4t":"" -H "X-Requested-With: XMLHttpRequest" "https://cloud.vochts.de/public.php/webdav/" -o dataset.zip
-    echo "Extracting dataset..."
-    unzip -q -o dataset.zip -d private/dependencies/FracAtlas/
-    rm dataset.zip
-    echo "Dataset extracted to private/dependencies/"
+    if [-d "private/generated/yolo_dataset_enhanced"]; then
+      echo "Dataset folder already exists, skip download"
+    else
+      echo "Downloading dataset ..."
+      curl -u "g9xqSHsosK7oP6N":"" -H "X-Requested-With: XMLHttpRequest" "https://cloud.vochts.de/public.php/webdav/" -o dataset.zip
+      echo "Extracting dataset..."
+      unzip -q -o dataset.zip -d private/dependencies/FracAtlas/
+      rm dataset.zip
+      echo "Dataset extracted to private/dependencies/"
+    fi
 else
     echo "NEXTCLOUD_DATASET_URL not configured. Skipping download."
     echo "Ensure dataset is manually placed in private/dependencies/FracAtlas"
