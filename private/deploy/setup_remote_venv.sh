@@ -28,7 +28,8 @@ if [[ $NEXTCLOUD_DATASET_URL != *"your-nextcloud.com"* ]]; then
       echo "Dataset folder already exists, skip download"
     else
       echo "Downloading dataset ..."
-      curl -u "g9xqSHsosK7oP6N":"" -H "X-Requested-With: XMLHttpRequest" "https://cloud.vochts.de/public.php/webdav/" -o dataset.zip
+
+      curl -u "qXEmKR3pr6CyrZw":"" -H "X-Requested-With: XMLHttpRequest" "https://cloud.vochts.de/public.php/webdav/" -o dataset.zip
       echo "Extracting dataset..."
       unzip -q -o dataset.zip -d private/generated/
       rm dataset.zip
