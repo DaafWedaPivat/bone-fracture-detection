@@ -40,9 +40,9 @@ else
 fi
 
 # 3. Prepare Dataset
-echo "Running dataset preparation..."
-export ROOT_DIR="$(pwd)/"
-python3 private/make/yolo_dataset_enhanced_remote.py
+# echo "Running dataset preparation..."
+# export ROOT_DIR="$(pwd)/"
+# python3 private/make/yolo_dataset_enhanced_remote.py
 
 # 4. Run Training
 echo "Starting training"
