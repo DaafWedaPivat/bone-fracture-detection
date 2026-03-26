@@ -24,7 +24,7 @@ pip install -r requirements.txt
 
 # 2. Download and Extract Dataset
 if [[ $NEXTCLOUD_DATASET_URL != *"your-nextcloud.com"* ]]; then
-    if [-d "private/generated/yolo_dataset_enhanced"]; then
+    if [[ -d "private/generated/yolo_dataset_enhanced" ]]; then
       echo "Dataset folder already exists, skip download"
     else
       echo "Downloading dataset ..."
