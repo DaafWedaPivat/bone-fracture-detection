@@ -30,13 +30,12 @@ if [[ $NEXTCLOUD_DATASET_URL != *"your-nextcloud.com"* ]]; then
       echo "Downloading dataset ..."
       curl -u "g9xqSHsosK7oP6N":"" -H "X-Requested-With: XMLHttpRequest" "https://cloud.vochts.de/public.php/webdav/" -o dataset.zip
       echo "Extracting dataset..."
-      unzip -q -o dataset.zip -d private/dependencies/FracAtlas/
+      unzip -q -o dataset.zip -d private/generated/
       rm dataset.zip
-      echo "Dataset extracted to private/dependencies/"
+      echo "Dataset extracted to private/generated/"
     fi
 else
     echo "NEXTCLOUD_DATASET_URL not configured. Skipping download."
-    echo "Ensure dataset is manually placed in private/dependencies/FracAtlas"
 fi
 
 # 3. Prepare Dataset
