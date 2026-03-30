@@ -1,0 +1,7 @@
+models:
+  - name: "YOLOv8L no preprocessing"
+    path: "private/dependencies/models/yolov8l400.onnx"
+    preprocessing: false
+  - name: "YOLOv8L preprocessing"
+    path: "private/dependencies/models/yolov8l400_enhanced.onnx"
+    preprocessing: true
