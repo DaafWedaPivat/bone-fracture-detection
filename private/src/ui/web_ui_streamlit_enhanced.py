@@ -60,7 +60,7 @@ def main():
 
     annotation_file = st.file_uploader(label="Upload annotation (optional)", type=["txt"])
 
-    threshold = st.slider(label="Confidence Threshold", min_value=0.001, max_value=1, value=0.1, step=0.001, format="%0.3f")
+    threshold = st.slider(label="Confidence Threshold", min_value=0.001, max_value=1.0, value=0.1, step=0.001, format="%0.3f")
 
     image_results = []
 
