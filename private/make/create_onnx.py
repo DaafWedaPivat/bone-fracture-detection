@@ -1,6 +1,6 @@
 from ultralytics import YOLO
 
-model = YOLO("../generated/yolov8l400/weights/best.pt")
+model = YOLO("../generated/yolov8l400_enhanced/weights/best.pt")
 
 model.export(format="onnx")
 

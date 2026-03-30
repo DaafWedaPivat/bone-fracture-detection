@@ -1,0 +1,7 @@
+models:
+  - name: "YOLOv8L no preprocessing"
+    path: "private/generated/yolov8l400/weights/best.pt"
+    preprocessing: false
+  - name: "YOLOv8L preprocessing"
+    path: "private/generated/yolov8l400_enhanced/weights/best.pt"
+    preprocessing: true

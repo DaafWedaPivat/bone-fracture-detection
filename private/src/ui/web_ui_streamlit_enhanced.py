@@ -7,108 +7,137 @@ import io
 import pydicom
 from pydicom.pixel_data_handlers.util import apply_voi_lut
 import cv2
+import yaml
+from pathlib import Path
 
-model_name = "yolov8l400"
-model_path = f"../../generated/{model_name}/weights/best.pt"
+# Load config
+def load_config():
+    config_path = Path(__file__).parent / "models_config.yaml"
+    with open(config_path, "r") as f:
+        return yaml.safe_load(f)
 
-# @st.experimental_singleton
+config = load_config()
+model_options = config["models"]
+
+@st.cache_resource
 def load_model(model_path):
     return YOLO(model_path)
-
-model = load_model(model_path)
 
 def apply_clahe(pil_image):
     # Convert PIL Image to numpy array (grayscale)
     img_array = np.array(pil_image.convert("L"))
-    
+
     # Create CLAHE object
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     enhanced_array = clahe.apply(img_array)
-    
+
     # Convert back to PIL Image and then to RGB (YOLO expects 3 channels)
     return Image.fromarray(enhanced_array).convert("RGB")
 
 def main():
+    st.set_page_config(page_title="Bone Fracture Detection", layout="wide")
     st.title("bone fracture detection")
+
+    # Model Selection in Sidebar
+    st.sidebar.title("Model Selection")
+    selected_model_name = st.sidebar.selectbox(
+        "Choose Model",
+        options=[m["name"] for m in model_options]
+    )
+
+    selected_model_config = next(m for m in model_options if m["name"] == selected_model_name)
+
+    # Resolve path relative to project root
+    root_path = Path(__file__).resolve().parents[3]
+    full_model_path = root_path / selected_model_config["path"]
+
+    with st.spinner("Loading model..."):
+        model = load_model(str(full_model_path))
+
+    use_preprocessing = selected_model_config["preprocessing"]
 
     images = st.file_uploader(label="Upload image", type=["png", "jpg", "jpeg", "dcm"], accept_multiple_files=True)
 
     annotation_file = st.file_uploader(label="Upload annotation (optional)", type=["txt"])
 
-    threshold = st.slider(label="", min_value=0.001, max_value=0.5, value=0.1, step=0.001, format="%0.3f")
+    threshold = st.slider(label="Confidence Threshold", min_value=0.001, max_value=1, value=0.1, step=0.001, format="%0.3f")
 
     image_results = []
 
-    with st.spinner("Detecting fractures..."):
-        # create image placeholders
-        px_image_figures = []
-        st_image_elements = []
-        # st_text_elements = []
-        for _ in range(len(images)):
-            # st_text_elements.append(st.empty())
-            st_image_elements.append(st.empty())
+    if images:
+        with st.spinner("Detecting fractures..."):
+            # create image placeholders
+            px_image_figures = []
+            st_image_elements = []
+            # st_text_elements = []
+            for _ in range(len(images)):
+                # st_text_elements.append(st.empty())
+                st_image_elements.append(st.empty())
+
+            for i in range(len(images)):
+                images[i] = open_image(images[i], use_preprocessing)
+
+                fig = imshow(images[i])
+                px_image_figures.append(fig)
+                st_image_elements[i].plotly_chart(fig, key=f"plotly_chart_initial_{i}")
+
+            for i in range(len(images)):
+                result = predict(images[i], model)
+
+                new_result = []
+                for r in result:
+                    if r["confidence"] >= threshold:
+                        new_result.append(r)
+                result = new_result
+
+                image_results.append(result)
 
         for i in range(len(images)):
-            images[i] = open_image(images[i])
+            fig = px_image_figures[i]
 
-            fig = imshow(images[i])
-            px_image_figures.append(fig)
-            st_image_elements[i].plotly_chart(fig, key=f"plotly_chart_initial_{i}")
+            if annotation_file is not None:
+                img_size_x, img_size_y = images[i].size
+                add_annotation_file_boxes(fig, annotation_file, img_size_x, img_size_y)
 
-        for i in range(len(images)):
-            result = predict(images[i])
+            if len(image_results[i]) > 0:
+                add_model_prediction_boxes(fig, image_results[i])
 
-            new_result = []
-            for i, r in enumerate(result):
-                if r["confidence"] >= threshold:
-                    new_result.append(r)
-            result = new_result
-
-            image_results.append(result)
-
-    for i in range(len(images)):
-        fig = px_image_figures[i]
-
-        if annotation_file is not None:
-            img_size_x, img_size_y = images[i].size
-            add_annotation_file_boxes(fig, annotation_file, img_size_x, img_size_y)
-
-        if len(image_results[i]) > 0:
-            add_model_prediction_boxes(fig, image_results[i])
-
-        st_image_elements[i].plotly_chart(fig, key=f"plotly_chart_annotated_{i}")
+            st_image_elements[i].plotly_chart(fig, key=f"plotly_chart_annotated_{i}")
 
 
-        if len(image_results[i]) > 0:
-            annotated_image = create_downloadable_image(images[i], result)
-            img_buffer = io.BytesIO()
-            annotated_image.save(img_buffer, format='PNG')
-            img_bytes = img_buffer.getvalue()
+            if len(image_results[i]) > 0:
+                annotated_image = create_downloadable_image(images[i], image_results[i])
+                img_buffer = io.BytesIO()
+                annotated_image.save(img_buffer, format='PNG')
+                img_bytes = img_buffer.getvalue()
 
-            st.download_button(
-                label="Download Annotated Image",
-                data=img_bytes,
-                file_name=f"annotated_{images[i].filename if hasattr(images[i], 'filename') else 'image'}.png",
-                mime="image/png"
-            )
+                st.download_button(
+                    label=f"Download Annotated Image {i+1}",
+                    data=img_bytes,
+                    file_name=f"annotated_{images[i].filename if hasattr(images[i], 'filename') else 'image'}.png",
+                    mime="image/png",
+                    key=f"download_{i}"
+                )
 
 # @st.experimental_memo
 
-def open_image(image):
+def open_image(image, use_preprocessing=True):
     if image.name.lower().endswith(".dcm"):
-        image = dicom_to_pil(image)
-        return image
+        pil_image = dicom_to_pil(image)
     else:
-        image = Image.open(image)
-        image = apply_clahe(image)
-        return image
+        pil_image = Image.open(image).convert("RGB")
+
+    if use_preprocessing:
+        pil_image = apply_clahe(pil_image)
+
+    return pil_image
 
 # @st.experimental_memo
 def imshow(_image):
     return px.imshow(_image)
 
 # @st.experimental_memo
-def predict(_image):
+def predict(_image, model):
     return model.predict(_image, conf=0.001)[0].summary()
 
 def add_annotation_file_boxes(fig, annotation_file, img_size_x, img_size_y):
@@ -171,7 +200,7 @@ def dicom_to_pil(dicom_file):
         # Convert to grayscale first if it's RGB
         pil_image = Image.fromarray(image[:, :, :3]).convert("L")
 
-    return apply_clahe(pil_image)
+    return pil_image.convert("RGB")
 
 if __name__ == "__main__":
     main()
