@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit_analytics2 as streamlit_analytics
 from PIL import Image, ImageDraw
 import plotly.express as px
 import numpy as np
@@ -38,86 +39,98 @@ def main():
     st.set_page_config(page_title="Bone Fracture Detection", layout="wide")
     st.title("bone fracture detection")
 
-    # Model Selection in Sidebar
-    st.sidebar.title("Model Selection")
-    selected_model_name = st.sidebar.selectbox(
-        "Choose Model",
-        options=[m["name"] for m in model_options]
-    )
-
-    selected_model_config = next(m for m in model_options if m["name"] == selected_model_name)
-
     # Resolve path relative to project root
     root_path = Path(__file__).resolve().parents[3]
-    full_model_path = root_path / selected_model_config["path"]
+    analytics_path = root_path / "private" / "generated" / "analytics.json"
 
-    with st.spinner("Loading model..."):
-        model = load_model(str(full_model_path))
+    # Use a password from st.secrets if available, else use a default
+    analytics_password = st.secrets.get("analytics_password", "bone_fracture_analytics")
 
-    use_preprocessing = selected_model_config["preprocessing"]
+    with streamlit_analytics.track(
+        save_to_json=str(analytics_path), 
+        load_from_json=str(analytics_path),
+        unsafe_password=analytics_password
+    ):
+        # Model Selection in Sidebar
+        st.sidebar.title("Model Selection")
+        selected_model_name = st.sidebar.selectbox(
+            "Choose Model",
+            options=[m["name"] for m in model_options]
+        )
 
-    images = st.file_uploader(label="Upload image", type=["png", "jpg", "jpeg", "dcm"], accept_multiple_files=True)
+        selected_model_config = next(m for m in model_options if m["name"] == selected_model_name)
 
-    annotation_file = st.file_uploader(label="Upload annotation (optional)", type=["txt"])
+        # Resolve path relative to project root
+        root_path = Path(__file__).resolve().parents[3]
+        full_model_path = root_path / selected_model_config["path"]
 
-    threshold = st.slider(label="Confidence Threshold", min_value=0.001, max_value=1.0, value=0.1, step=0.001, format="%0.3f")
+        with st.spinner("Loading model..."):
+            model = load_model(str(full_model_path))
 
-    image_results = []
+        use_preprocessing = selected_model_config["preprocessing"]
 
-    if images:
-        with st.spinner("Detecting fractures..."):
-            # create image placeholders
-            px_image_figures = []
-            st_image_elements = []
-            # st_text_elements = []
-            for _ in range(len(images)):
-                # st_text_elements.append(st.empty())
-                st_image_elements.append(st.empty())
+        images = st.file_uploader(label="Upload image", type=["png", "jpg", "jpeg", "dcm"], accept_multiple_files=True)
+
+        annotation_file = st.file_uploader(label="Upload annotation (optional)", type=["txt"])
+
+        threshold = st.slider(label="Confidence Threshold", min_value=0.001, max_value=1.0, value=0.1, step=0.001, format="%0.3f")
+
+        image_results = []
+
+        if images:
+            with st.spinner("Detecting fractures..."):
+                # create image placeholders
+                px_image_figures = []
+                st_image_elements = []
+                # st_text_elements = []
+                for _ in range(len(images)):
+                    # st_text_elements.append(st.empty())
+                    st_image_elements.append(st.empty())
+
+                for i in range(len(images)):
+                    images[i] = open_image(images[i], use_preprocessing)
+
+                    fig = imshow(images[i])
+                    px_image_figures.append(fig)
+                    st_image_elements[i].plotly_chart(fig, key=f"plotly_chart_initial_{i}")
+
+                for i in range(len(images)):
+                    result = predict(images[i], model)
+
+                    new_result = []
+                    for r in result:
+                        if r["confidence"] >= threshold:
+                            new_result.append(r)
+                    result = new_result
+
+                    image_results.append(result)
 
             for i in range(len(images)):
-                images[i] = open_image(images[i], use_preprocessing)
+                fig = px_image_figures[i]
 
-                fig = imshow(images[i])
-                px_image_figures.append(fig)
-                st_image_elements[i].plotly_chart(fig, key=f"plotly_chart_initial_{i}")
+                if annotation_file is not None:
+                    img_size_x, img_size_y = images[i].size
+                    add_annotation_file_boxes(fig, annotation_file, img_size_x, img_size_y)
 
-            for i in range(len(images)):
-                result = predict(images[i], model)
+                if len(image_results[i]) > 0:
+                    add_model_prediction_boxes(fig, image_results[i])
 
-                new_result = []
-                for r in result:
-                    if r["confidence"] >= threshold:
-                        new_result.append(r)
-                result = new_result
-
-                image_results.append(result)
-
-        for i in range(len(images)):
-            fig = px_image_figures[i]
-
-            if annotation_file is not None:
-                img_size_x, img_size_y = images[i].size
-                add_annotation_file_boxes(fig, annotation_file, img_size_x, img_size_y)
-
-            if len(image_results[i]) > 0:
-                add_model_prediction_boxes(fig, image_results[i])
-
-            st_image_elements[i].plotly_chart(fig, key=f"plotly_chart_annotated_{i}")
+                st_image_elements[i].plotly_chart(fig, key=f"plotly_chart_annotated_{i}")
 
 
-            if len(image_results[i]) > 0:
-                annotated_image = create_downloadable_image(images[i], image_results[i])
-                img_buffer = io.BytesIO()
-                annotated_image.save(img_buffer, format='PNG')
-                img_bytes = img_buffer.getvalue()
+                if len(image_results[i]) > 0:
+                    annotated_image = create_downloadable_image(images[i], image_results[i])
+                    img_buffer = io.BytesIO()
+                    annotated_image.save(img_buffer, format='PNG')
+                    img_bytes = img_buffer.getvalue()
 
-                st.download_button(
-                    label=f"Download Annotated Image {i+1}",
-                    data=img_bytes,
-                    file_name=f"annotated_{images[i].filename if hasattr(images[i], 'filename') else 'image'}.png",
-                    mime="image/png",
-                    key=f"download_{i}"
-                )
+                    st.download_button(
+                        label=f"Download Annotated Image {i+1}",
+                        data=img_bytes,
+                        file_name=f"annotated_{images[i].filename if hasattr(images[i], 'filename') else 'image'}.png",
+                        mime="image/png",
+                        key=f"download_{i}"
+                    )
 
 # @st.experimental_memo
 

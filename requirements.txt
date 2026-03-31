@@ -77,3 +77,4 @@ pydicom
 pylibjpeg
 pylibjpeg-libjpeg
 onnxruntime
+streamlit-analytics2
